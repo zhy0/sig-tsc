@@ -1,0 +1,7 @@
+numpy
+sklearn
+pandas
+cython
+sktime
+iisignature
+luigi
