@@ -1,1 +1,0 @@
-/home/zhs/projects/sig/digits/model.py
