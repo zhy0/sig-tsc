@@ -5,6 +5,7 @@ import luigi
 import timeit
 from model import SigModel, LogSigModel
 from sktime.utils.load_data import load_from_arff_to_dataframe
+from xgboost import XGBClassifier
 
 import sklearn
 from sklearn.linear_model import LogisticRegression, Lasso

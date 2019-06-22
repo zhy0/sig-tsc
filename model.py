@@ -35,7 +35,7 @@ class SigModel:
     def train(self, X, Y):
         """Train the signature model"""
         assert len(X) == len(Y)
-        self.model.fit(self.preprocess(X), Y)
+        self.model.fit(np.array(self.preprocess(X)), Y)
 
     def predict(self, X):
         """Predict using trained model"""
