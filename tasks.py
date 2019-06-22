@@ -149,6 +149,7 @@ class RunUnivariate(PickleTask):
     levels = luigi.ListParameter()
     sig_type = luigi.Parameter(default='sig')
     model_type = luigi.Parameter(default='LogisticRegression')
+    model_args = luigi.DictParameter(default={})
 
     def output(self):
         levels_name = '_'.join(map(str, self.levels))
@@ -169,9 +170,9 @@ class RunUnivariate(PickleTask):
             t = []
             for level in self.levels:
                 if self.sig_type == 'sig':
-                    m = SigModel(model, transform=transform, level=level)
+                    m = SigModel(model, transform=transform, level=level, **self.model_args)
                 elif self.sig_type == 'logsig':
-                    m = LogSigModel(model, dim=2, transform=transform, level=level)
+                    m = LogSigModel(model, dim=2, transform=transform, level=level, **self.model_args)
                 # start timing
                 start = timeit.default_timer()
                 m.train(X_train, y_train)
