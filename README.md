@@ -5,6 +5,12 @@ for signature features on the [UCR/UEA Time Series
 Classification repository](http://www.timeseriesclassification.com/). (Work in progress)
 
 
+## Results
+
+Some of our benchmark results are uploaded in this Github
+repository under `results/`. In the [`result_analysis.ipynb`](./result_analysis.ipynb) Jupyter
+notebook, you can view a brief analysis of these results.
+
 
 ## Installation
 
