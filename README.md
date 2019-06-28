@@ -6,6 +6,7 @@ Classification repository](http://www.timeseriesclassification.com/). (Work in p
 
 
 ## Results
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zhy0/sig-tsc/blob/master/result_analysis.ipynb)
 
 Some of our benchmark results are uploaded in this Github
 repository under `results/`. In the [`result_analysis.ipynb`](./result_analysis.ipynb) Jupyter
