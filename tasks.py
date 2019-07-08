@@ -3,6 +3,7 @@ import numpy as np
 import pathlib
 import luigi
 import timeit
+import classifiers
 from model import SigModel, LogSigModel
 from sktime.utils.load_data import load_from_arff_to_dataframe
 from xgboost import XGBClassifier
@@ -192,6 +193,63 @@ class RunUnivariate(PickleTask):
         self.dump(pd.concat([scores,times], axis=1))
 
 
+class RunVotingEnsemble(PickleTask):
+    dataset = luigi.Parameter()
+    levels = luigi.ListParameter()
+    sig_type = luigi.Parameter(default='sig')
+    #clf_type = luigi.Parameter(default='LogisticRegression')
+    #clf_args = luigi.DictParameter(default={})
+
+    def output(self):
+        levels_name = '_'.join(map(str, self.levels))
+        filename = f"{self.sig_type}_flatcote_{levels_name}.pkl"
+        return luigi.LocalTarget(PIPELINE_DIR/self.dataset/filename)
+
+    def run(self):
+        X_train, y_train, X_test, y_test = load_data(self.dataset)
+        logit = LogisticRegression(random_state=42)
+
+        r = []
+        for level in self.levels:
+            m = classifiers.create_vote_clf(logit, level=level)
+            # start timing
+            start = timeit.default_timer()
+            m.fit(X_train, y_train)
+            elapsed = timeit.default_timer() - start
+            # end timing
+            r.append([m.score(X_test, y_test), elapsed])
+
+        self.dump(pd.DataFrame(r, columns=["Score", "Elapsed"], index=self.levels))
+
+
+class RunFeatureUnion(PickleTask):
+    dataset = luigi.Parameter()
+    levels = luigi.ListParameter()
+    sig_type = luigi.Parameter(default='logsig')
+
+    def output(self):
+        levels_name = '_'.join(map(str, self.levels))
+        filename = f"{self.sig_type}_concat_{levels_name}.pkl"
+        return luigi.LocalTarget(PIPELINE_DIR/self.dataset/filename)
+
+    def run(self):
+        X_train, y_train, X_test, y_test = load_data(self.dataset)
+        logit = LogisticRegression(random_state=42)
+
+        r = []
+        for level in self.levels:
+            m = classifiers.create_concatenator(logit, sig_type=self.sig_type, level=level)
+            # start timing
+            start = timeit.default_timer()
+            m.fit(X_train, y_train)
+            elapsed = timeit.default_timer() - start
+            # end timing
+            r.append([m.score(X_test, y_test), elapsed])
+
+        self.dump(pd.DataFrame(r, columns=["Score", "Elapsed"], index=self.levels))
+
+
+
 def main():
     # UCR datasets
     DATASETS = [
@@ -281,7 +339,7 @@ def main():
 #1123400	InsectWingbeat
 
     luigi.build(
-        [RunUnivariate(dataset=dataset, levels=[2,3,4,5,6,7,8,9,10]) for dataset in DATASETS],
+        [RunVotingEnsemble(dataset=dataset, levels=[2,3,4,5,6,7,8,9,10]) for dataset in DATASETS],
         workers=1,
         local_scheduler=True
     )
