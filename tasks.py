@@ -24,6 +24,45 @@ TRANSFORMS = {
     'timeindexed': lambda X: [(t,x) for t,x in enumerate(X)]
 }
 
+DATASETS = [
+    "ACSF1", "Adiac", "AllGestureWiimoteX", "AllGestureWiimoteY",
+    "AllGestureWiimoteZ", "ArrowHead", "Beef", "BeetleFly", "BirdChicken",
+    "BME", "Car", "CBF", "Chinatown", "ChlorineConcentration",
+    "CinCECGTorso", "Coffee", "Computers", "CricketX", "CricketY",
+    "CricketZ", "Crop", "DiatomSizeReduction",
+    "DistalPhalanxOutlineAgeGroup", "DistalPhalanxOutlineCorrect",
+    "DistalPhalanxTW", "DodgerLoopDay", "DodgerLoopGame",
+    "DodgerLoopWeekend", "Earthquakes", "ECG200", "ECG5000", "ECGFiveDays",
+    "ElectricDevices", "EOGHorizontalSignal", "EOGVerticalSignal",
+    "EthanolLevel", "FaceAll", "FaceFour", "FacesUCR", "FiftyWords",
+    "Fish", "FordA", "FordB", "FreezerRegularTrain", "FreezerSmallTrain",
+    "Fungi", "GestureMidAirD1", "GestureMidAirD2", "GestureMidAirD3",
+    "GesturePebbleZ1", "GesturePebbleZ2", "GunPoint", "GunPointAgeSpan",
+    "GunPointMaleVersusFemale", "GunPointOldVersusYoung", "Ham",
+    "HandOutlines", "Haptics", "Herring", "HouseTwenty", "InlineSkate",
+    "InsectEPGRegularTrain", "InsectEPGSmallTrain", "InsectWingbeatSound",
+    "ItalyPowerDemand", "LargeKitchenAppliances", "Lightning2",
+    "Lightning7", "Mallat", "Meat", "MedicalImages", "MelbournePedestrian",
+    "MiddlePhalanxOutlineAgeGroup", "MiddlePhalanxOutlineCorrect",
+    "MiddlePhalanxTW", "MixedShapesRegularTrain", "MixedShapesSmallTrain",
+    "MoteStrain", "NonInvasiveFatalECGThorax1",
+    "NonInvasiveFatalECGThorax2", "OliveOil", "OSULeaf",
+    "PhalangesOutlinesCorrect", "Phoneme", "PickupGestureWiimoteZ",
+    "PigAirwayPressure", "PigArtPressure", "PigCVP", "PLAID", "Plane",
+    "PowerCons", "ProximalPhalanxOutlineAgeGroup",
+    "ProximalPhalanxOutlineCorrect", "ProximalPhalanxTW",
+    "RefrigerationDevices", "Rock", "ScreenType", "SemgHandGenderCh2",
+    "SemgHandMovementCh2", "SemgHandSubjectCh2", "ShakeGestureWiimoteZ",
+    "ShapeletSim", "ShapesAll", "SmallKitchenAppliances", "SmoothSubspace",
+    "SonyAIBORobotSurface1", "SonyAIBORobotSurface2", "StarLightCurves",
+    "Strawberry", "SwedishLeaf", "Symbols", "SyntheticControl",
+    "ToeSegmentation1", "ToeSegmentation2", "Trace", "TwoLeadECG",
+    "TwoPatterns", "UCR_archive_2018_to_release", "UMD",
+    "UWaveGestureLibraryAll", "UWaveGestureLibraryX",
+    "UWaveGestureLibraryY", "UWaveGestureLibraryZ", "Wafer", "Wine",
+    "WordSynonyms", "Worms", "WormsTwoClass", "Yoga",
+]
+
 
 def load_data(dataset, datadir=DATA_DIR):
     """
@@ -56,6 +95,23 @@ def load_mult_data(dataset, datadir=MULT_DATA_DIR):
     X_test = parse_to_np(X_test)
 
     return (X_train, y_train, X_test, y_test)
+
+
+def load_results(filename, results_dir='./results/ucr', datasets=DATASETS):
+    """
+    Load all results stored as a .pkl file.
+    """
+    r = []
+    missing = []
+    names = []
+    for d in datasets:
+        try:
+            data = pd.read_pickle(f'{results_dir}/{d}/{filename}')
+            names.append(d)
+            r.append(data)
+        except FileNotFoundError:
+            missing.append(d)
+    return (pd.concat(r, keys=names), missing)
 
 
 class PickleTask(luigi.Task):
@@ -249,47 +305,29 @@ class RunFeatureUnion(PickleTask):
         self.dump(pd.DataFrame(r, columns=["Score", "Elapsed"], index=self.levels))
 
 
+class RunLogit(PickleTask):
+    dataset = luigi.Parameter()
+
+    def output(self):
+        filename = "logit.pkl"
+        return luigi.LocalTarget(PIPELINE_DIR/self.dataset/filename)
+
+    def run(self):
+        X_train, y_train, X_test, y_test = load_data(self.dataset)
+        logit = LogisticRegression(random_state=42)
+        # start timing
+        start = timeit.default_timer()
+        logit.fit(X_train, y_train)
+        elapsed = timeit.default_timer() - start
+
+        score = logit.score(X_test, y_test)
+        self.dump(pd.DataFrame([
+            {"Score": score, "Elapsed": elapsed}
+        ], index=[self.dataset]))
+
 
 def main():
     # UCR datasets
-    DATASETS = [
-        "ACSF1", "Adiac", "AllGestureWiimoteX", "AllGestureWiimoteY",
-        "AllGestureWiimoteZ", "ArrowHead", "Beef", "BeetleFly", "BirdChicken",
-        "BME", "Car", "CBF", "Chinatown", "ChlorineConcentration",
-        "CinCECGTorso", "Coffee", "Computers", "CricketX", "CricketY",
-        "CricketZ", "Crop", "DiatomSizeReduction",
-        "DistalPhalanxOutlineAgeGroup", "DistalPhalanxOutlineCorrect",
-        "DistalPhalanxTW", "DodgerLoopDay", "DodgerLoopGame",
-        "DodgerLoopWeekend", "Earthquakes", "ECG200", "ECG5000", "ECGFiveDays",
-        "ElectricDevices", "EOGHorizontalSignal", "EOGVerticalSignal",
-        "EthanolLevel", "FaceAll", "FaceFour", "FacesUCR", "FiftyWords",
-        "Fish", "FordA", "FordB", "FreezerRegularTrain", "FreezerSmallTrain",
-        "Fungi", "GestureMidAirD1", "GestureMidAirD2", "GestureMidAirD3",
-        "GesturePebbleZ1", "GesturePebbleZ2", "GunPoint", "GunPointAgeSpan",
-        "GunPointMaleVersusFemale", "GunPointOldVersusYoung", "Ham",
-        "HandOutlines", "Haptics", "Herring", "HouseTwenty", "InlineSkate",
-        "InsectEPGRegularTrain", "InsectEPGSmallTrain", "InsectWingbeatSound",
-        "ItalyPowerDemand", "LargeKitchenAppliances", "Lightning2",
-        "Lightning7", "Mallat", "Meat", "MedicalImages", "MelbournePedestrian",
-        "MiddlePhalanxOutlineAgeGroup", "MiddlePhalanxOutlineCorrect",
-        "MiddlePhalanxTW", "MixedShapesRegularTrain", "MixedShapesSmallTrain",
-        "MoteStrain", "NonInvasiveFatalECGThorax1",
-        "NonInvasiveFatalECGThorax2", "OliveOil", "OSULeaf",
-        "PhalangesOutlinesCorrect", "Phoneme", "PickupGestureWiimoteZ",
-        "PigAirwayPressure", "PigArtPressure", "PigCVP", "PLAID", "Plane",
-        "PowerCons", "ProximalPhalanxOutlineAgeGroup",
-        "ProximalPhalanxOutlineCorrect", "ProximalPhalanxTW",
-        "RefrigerationDevices", "Rock", "ScreenType", "SemgHandGenderCh2",
-        "SemgHandMovementCh2", "SemgHandSubjectCh2", "ShakeGestureWiimoteZ",
-        "ShapeletSim", "ShapesAll", "SmallKitchenAppliances", "SmoothSubspace",
-        "SonyAIBORobotSurface1", "SonyAIBORobotSurface2", "StarLightCurves",
-        "Strawberry", "SwedishLeaf", "Symbols", "SyntheticControl",
-        "ToeSegmentation1", "ToeSegmentation2", "Trace", "TwoLeadECG",
-        "TwoPatterns", "UCR_archive_2018_to_release", "UMD",
-        "UWaveGestureLibraryAll", "UWaveGestureLibraryX",
-        "UWaveGestureLibraryY", "UWaveGestureLibraryZ", "Wafer", "Wine",
-        "WordSynonyms", "Worms", "WormsTwoClass", "Yoga",
-    ]
 
     #MULT_SETS = [
     #    "ArticularyWordRecognition",
@@ -343,6 +381,11 @@ def main():
         workers=1,
         local_scheduler=True
     )
+    #luigi.build(
+    #    [RunLogit(dataset=dataset) for dataset in DATASETS],
+    #    workers=4,
+    #    local_scheduler=True
+    #)
     # don't run multivariate for now, large memory usage
     #luigi.build(
     #    [RunMultivariate(dataset=d, levels=[2,3,4]) for d in MULT_SETS],
