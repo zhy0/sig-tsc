@@ -113,21 +113,21 @@ def create_concatenator(clf, sig_type='logsig', level=3, dim=2):
 
     partial_sum = lambda X : np.cumsum(X, axis=1)
     ps_leadlag = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('leadlag',    LeadLag()),
         ('signature',  sig_features),
         ('scale',      StandardScaler()),
     ])
 
     ps_timeindexed = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('timeind',    TimeIndexed()),
         ('signature',  sig_features),
         ('scale',      StandardScaler()),
     ])
 
     ps_timejoined = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('timeind',    TimeIndexed()),
         ('timejoin',   TimeJoined()),
         ('signature',  sig_features),
@@ -173,7 +173,7 @@ def create_vote_clf(clf, level=3, voter=FlatCOTE, **vote_args):
 
     partial_sum = lambda X : np.cumsum(X, axis=1)
     ps_leadlag = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('leadlag',    LeadLag()),
         ('signature',  SigFeatures(level=level)),
         ('scale',      StandardScaler()),
@@ -181,7 +181,7 @@ def create_vote_clf(clf, level=3, voter=FlatCOTE, **vote_args):
     ])
 
     ps_timeindexed = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('timeind',    TimeIndexed()),
         ('signature',  SigFeatures(level=level)),
         ('scale',      StandardScaler()),
@@ -189,7 +189,7 @@ def create_vote_clf(clf, level=3, voter=FlatCOTE, **vote_args):
     ])
 
     ps_timejoined = Pipeline([
-        ('partialsum', FunctionTransformer(partial_sum)),
+        ('partialsum', FunctionTransformer(partial_sum, validate=False)),
         ('timeind',    TimeIndexed()),
         ('timejoin',   TimeJoined()),
         ('signature',  SigFeatures(level=level)),
