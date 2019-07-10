@@ -6,12 +6,19 @@ Classification repository](http://www.timeseriesclassification.com/). (Work in p
 
 
 ## Results
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zhy0/sig-tsc/blob/master/result_analysis.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zhy0/sig-tsc/blob/master/compare_ensembles.ipynb)
 
 Some of our benchmark results are uploaded in this Github
-repository under `results/`. In the [`result_analysis.ipynb`](./result_analysis.ipynb) Jupyter
-notebook, you can view a brief analysis of these results.
+repository under `results/`.
+Currently, there are two Jupyter notebooks that analyze
+the results:
 
+- [`compare_ensembles.ipynb`](./compare_ensembles.ipynb) draws a comparison
+   between two ensemble classifiers using signature features.
+
+- [`result_analysis.ipynb`](./result_analysis.ipynb) draws a comparison
+   between the XGBoost classifier and the classical logistic
+   regression on signature features.
 
 ## Installation
 
